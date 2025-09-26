@@ -6,6 +6,7 @@ export interface Task {
   priority: 'low' | 'medium' | 'high';
   category: string;
   completed: boolean;
+  isPriority?: boolean;
   createdAt: Date;
   completedAt?: Date;
   lastCheckin?: CheckinResponse;
@@ -20,6 +21,26 @@ export interface CheckinResponse {
 }
 
 export type EmotionalState = 'stressed' | 'tired' | 'unmotivated' | 'neutral' | 'good';
+
+export interface PriorityHabit {
+  id: string;
+  name: string;
+  category: string;
+  daysPerWeek: number;
+  createdAt: Date;
+  isActive: boolean;
+}
+
+export interface PriorityHabitEvent {
+  id: string;
+  priorityHabitId: string;
+  date: Date;
+  willingness: 'low' | 'medium' | 'high';
+  emotion: EmotionalState;
+  adaptiveAction: string;
+  completed: boolean;
+  completedAt?: Date;
+}
 
 export interface Habit {
   id: string;

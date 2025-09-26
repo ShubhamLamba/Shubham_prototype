@@ -1,15 +1,40 @@
 import React from 'react';
-import { ArrowLeft, TrendingUp, Heart, Target, CheckCircle } from 'lucide-react';
-import { Task } from '../types';
+import { ArrowLeft, TrendingUp, Heart, Target, CheckCircle, Star, Crown } from 'lucide-react';
+import { Task, PriorityHabitEvent } from '../types';
 
 interface WeeklyInsightsProps {
   tasks: Task[];
+  priorityHabitEvents?: PriorityHabitEvent[];
+  priorityHabitTarget?: number;
   onBack: () => void;
 }
 
-const WeeklyInsights: React.FC<WeeklyInsightsProps> = ({ tasks, onBack }) => {
+const WeeklyInsights: React.FC<WeeklyInsightsProps> = ({ 
+  tasks, 
+  priorityHabitEvents = [], 
+  priorityHabitTarget = 0,
+  onBack 
+}) => {
   const completedTasks = tasks.filter(t => t.completed);
+  const priorityTasks = tasks.filter(t => t.isPriority);
+  const completedPriorityTasks = priorityTasks.filter(t => t.completed);
   const tasksWithMoodData = completedTasks.filter(t => t.lastCheckin && t.completionMood);
+
+  // Calculate priority habit progress for the week
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  weekStart.setHours(0, 0, 0, 0);
+  
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+  
+  const thisWeekPriorityEvents = priorityHabitEvents.filter(event => {
+    const eventDate = new Date(event.date);
+    return eventDate >= weekStart && eventDate <= weekEnd && event.completed;
+  });
+  
+  const priorityHabitProgress = thisWeekPriorityEvents.length;
 
   // Calculate mood improvement
   const moodScores = {
@@ -86,6 +111,44 @@ const WeeklyInsights: React.FC<WeeklyInsightsProps> = ({ tasks, onBack }) => {
           </div>
         </div>
 
+        {/* Priority Habit Progress */}
+        {priorityHabitTarget > 0 && (
+          <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-6 shadow-sm mb-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                <Star className="w-5 h-5 text-purple-600 fill-current" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-800">Priority Habit Progress</h3>
+                <p className="text-sm text-gray-600">This week's focus</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-2xl font-bold text-purple-600">
+                {priorityHabitProgress}/{priorityHabitTarget}
+              </span>
+              <span className="text-sm text-gray-600">days completed</span>
+            </div>
+            
+            <div className="w-full bg-white/50 rounded-full h-3 mb-3">
+              <div 
+                className="bg-purple-500 h-3 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min((priorityHabitProgress / priorityHabitTarget) * 100, 100)}%` }}
+              />
+            </div>
+            
+            <p className="text-sm text-gray-700">
+              {priorityHabitProgress >= priorityHabitTarget 
+                ? "🎉 Amazing! You hit your target this week!" 
+                : priorityHabitProgress > 0
+                  ? `Great progress! ${priorityHabitTarget - priorityHabitProgress} more to go.`
+                  : "Ready to start your priority habit journey?"
+              }
+            </p>
+          </div>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 gap-4 mb-6">
           {stats.map((stat, index) => (
@@ -139,10 +202,49 @@ const WeeklyInsights: React.FC<WeeklyInsightsProps> = ({ tasks, onBack }) => {
           </div>
         </div>
 
+        {/* Task Breakdown */}
+        <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
+          <h3 className="font-semibold text-gray-800 mb-4">Task Breakdown</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Star className="w-4 h-4 text-purple-600 fill-current" />
+                <span className="text-sm text-gray-600">Priority Tasks</span>
+              </div>
+              <span className="font-medium">{completedPriorityTasks.length}/{priorityTasks.length}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-blue-600" />
+                <span className="text-sm text-gray-600">Regular Tasks</span>
+              </div>
+              <span className="font-medium">{completedTasks.length - completedPriorityTasks.length}</span>
+            </div>
+          </div>
+        </div>
+
         {/* Insights */}
-        <div className="space-y-4 mb-8">
+        <div className="space-y-4 mb-6">
           <h3 className="font-semibold text-gray-800">Key Insights</h3>
-          {insights.map((insight, index) => (
+          {[
+            {
+              title: "Priority Focus Works",
+              description: priorityHabitProgress > 0 
+                ? `You completed your priority habit ${priorityHabitProgress} times this week! Consistency is building.`
+                : "Ready to start focusing on your priority habit? Small steps lead to big changes.",
+              icon: "🎯"
+            },
+            {
+              title: "Mood Boost",
+              description: `You felt ${moodImprovement > 0 ? 'better' : 'about the same'} after completing tasks, showing the power of action.`,
+              icon: "💙"
+            },
+            {
+              title: "Consistency Wins",
+              description: "Even on tough days, you showed up. That's the real victory.",
+              icon: "⭐"
+            }
+          ].map((insight, index) => (
             <div key={index} className="bg-white rounded-xl p-4 shadow-sm">
               <div className="flex items-start gap-3">
                 <span className="text-2xl">{insight.icon}</span>
